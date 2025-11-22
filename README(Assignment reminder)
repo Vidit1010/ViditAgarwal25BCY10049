@@ -1,0 +1,23 @@
+Assignment Reminder System 🗓
+
+A simple, robust, and persistent command-line application built in Python to help students and professionals track assignments, projects, and deadlines. It uses a JSON file for data storage, ensuring all deadlines are saved between sessions.
+
+## ✨ Features
+
+* *Persistent Storage:* All assignments are saved to assignments.json, so your data is secure across multiple runs.
+* *Intelligent Reminders:* Alerts you to tasks due within a configurable threshold (default: 3 days).
+* *Overdue Flagging:* Clearly identifies any assignments that have passed their due date.
+* *Task Management:* Allows you to easily add new tasks and mark completed assignments as deleted.
+* *Clean CLI:* Simple, menu-driven command-line interface.
+
+## ⚙ Requirements
+
+This project requires *Python 3.6+* and uses only standard, built-in libraries. No external dependencies need to be installed via pip.
+
+* json
+* datetime
+* time
+* os
+### 1. File Structure
+
+Ensure you have the following file structure in your local directory. The assignments.json file will be created automatically upon the first successful save.
