@@ -1,0 +1,140 @@
+import json
+import datetime
+import time
+import os
+
+# --- Configuration ---
+DATA_FILE = 'assignments.json'
+REMINDER_THRESHOLD_DAYS = 3 # How many days before the due date to start reminding
+
+# --- File Handling Functions ---
+
+def load_assignments():
+    """Loads assignments from the JSON file."""
+    if not os.path.exists(DATA_FILE):
+        return []
+    try:
+        with open(DATA_FILE, 'r') as f:
+            return json.load(f)
+    except json.JSONDecodeError:
+        print(f"⚠ Error: Could not decode JSON from {DATA_FILE}. Starting with an empty list.")
+        return []
+    except Exception as e:
+        print(f"⚠ An error occurred while loading: {e}. Starting with an empty list.")
+        return []
+
+def save_assignments(assignments):
+    """Saves assignments to the JSON file."""
+    try:
+        with open(DATA_FILE, 'w') as f:
+            json.dump(assignments, f, indent=4)
+    except Exception as e:
+        print(f"❌ Error saving data: {e}")
+
+# --- Core Logic Functions ---
+
+def check_reminders(assignments):
+    """Checks for assignments due soon and prints a reminder."""
+    now = datetime.datetime.now()
+    due_assignments = []
+    
+    print("\n--- Checking Reminders ---")
+    
+    for assignment in assignments:
+        try:
+            # Convert the due_date string to a datetime object
+            due_date_str = assignment['due_date']
+            due_date = datetime.datetime.strptime(due_date_str, "%Y-%m-%d %H:%M:%S")
+            
+            time_left = due_date - now
+            time_left_days = time_left.total_seconds() / (60 * 60 * 24)
+
+            # Check if the assignment is due and within the reminder threshold
+            if time_left_days <= REMINDER_THRESHOLD_DAYS and time_left_days > 0:
+                due_assignments.append({
+                    "name": assignment['name'],
+                    "time_left": f"{time_left.days} days, {time_left.seconds // 3600} hours",
+                    "priority": assignment['priority']
+                })
+            
+            # Check for overdue assignments
+            elif time_left_days <= 0:
+                print(f"🚨 *OVERDUE:* {assignment['name']} (Due: {due_date_str})")
+
+
+        except ValueError:
+            print(f"❗ Invalid date format for '{assignment['name']}'. Please use YYYY-MM-DD HH:MM:SS.")
+            continue
+        
+    if due_assignments:
+        print("\n🔔 *Assignments Due Soon:*")
+        # Sort by the number of days left (not implemented here for simplicity, but a good addition!)
+        for item in due_assignments:
+            print(f"  - *{item['name']}* (Priority: {item['priority']}) -> *{item['time_left']} left!*")
+    else:
+        print("✅ No assignments are due within the next {} days.".format(REMINDER_THRESHOLD_DAYS))
+
+# --- User Interaction Function ---
+
+def add_assignment(assignments):
+    """Prompts the user to add a new assignment."""
+    print("\n--- Add New Assignment ---")
+    name = input("Assignment Name: ")
+    # Input format: YYYY-MM-DD HH:MM:SS
+    date_format = "%Y-%m-%d %H:%M:%S"
+    due_date_str = input(f"Due Date (e.g., 2025-11-25 23:59:00): ")
+    priority = input("Priority (e.g., High, Medium, Low): ")
+    
+    try:
+        # Validate the date format
+        datetime.datetime.strptime(due_date_str, date_format) 
+        
+        new_assignment = {
+            "name": name,
+            "due_date": due_date_str,
+            "priority": priority
+        }
+        assignments.append(new_assignment)
+        save_assignments(assignments)
+        print("➕ Assignment added successfully!")
+        
+    except ValueError:
+        print(f"❌ Invalid date format entered. Please use {date_format}.")
+
+def display_menu():
+    """Displays the main menu options."""
+    print("\n===============================")
+    print("🎓 Assignment Reminder System 🗓")
+    print("===============================")
+    print("1. Check Reminders Now")
+    print("2. Add New Assignment")
+    print("3. Exit")
+    print("===============================")
+
+# --- Main Program Loop ---
+
+def main():
+    assignments = load_assignments()
+    
+    # Optional: Initial check on startup
+    check_reminders(assignments) 
+    
+    while True:
+        display_menu()
+        choice = input("Enter your choice (1/2/3): ")
+        
+        if choice == '1':
+            check_reminders(assignments)
+        elif choice == '2':
+            add_assignment(assignments)
+        elif choice == '3':
+            print("👋 Exiting the system. Goodbye!")
+            break
+        else:
+            print("❗ Invalid choice. Please select 1, 2, or 3.")
+        
+        # Pause for a short time to make the output readable before the next loop
+        time.sleep(1) 
+
+if _name_ == "_main_":
+    main()
