@@ -40,6 +40,10 @@ def check_reminders(assignments):
     
     print("\n--- Checking Reminders ---")
     
+    if not assignments:
+        print("✅ No assignments currently tracked.")
+        return
+
     for assignment in assignments:
         try:
             # Convert the due_date string to a datetime object
@@ -54,7 +58,8 @@ def check_reminders(assignments):
                 due_assignments.append({
                     "name": assignment['name'],
                     "time_left": f"{time_left.days} days, {time_left.seconds // 3600} hours",
-                    "priority": assignment['priority']
+                    "priority": assignment['priority'],
+                    "due_date_full": due_date_str
                 })
             
             # Check for overdue assignments
@@ -68,13 +73,12 @@ def check_reminders(assignments):
         
     if due_assignments:
         print("\n🔔 *Assignments Due Soon:*")
-        # Sort by the number of days left (not implemented here for simplicity, but a good addition!)
+        # Sort by the time left (ascending)
+        due_assignments.sort(key=lambda x: datetime.datetime.strptime(x['due_date_full'], "%Y-%m-%d %H:%M:%S"))
         for item in due_assignments:
             print(f"  - *{item['name']}* (Priority: {item['priority']}) -> *{item['time_left']} left!*")
     else:
         print("✅ No assignments are due within the next {} days.".format(REMINDER_THRESHOLD_DAYS))
-
-# --- User Interaction Function ---
 
 def add_assignment(assignments):
     """Prompts the user to add a new assignment."""
@@ -101,6 +105,46 @@ def add_assignment(assignments):
     except ValueError:
         print(f"❌ Invalid date format entered. Please use {date_format}.")
 
+# --- NEW FUNCTION FOR DELETION ---
+
+def delete_assignment(assignments):
+    """Lists assignments and allows the user to delete one by index."""
+    if not assignments:
+        print("\nℹ No assignments to delete.")
+        return
+
+    print("\n--- Delete/Complete Assignment ---")
+    print("Select the number of the assignment to mark as COMPLETE and remove:")
+
+    # 1. List all assignments with an index
+    for i, assignment in enumerate(assignments):
+        print(f"  [{i+1}] {assignment['name']} (Due: {assignment['due_date']} | Priority: {assignment['priority']})")
+    
+    try:
+        choice = input("Enter number to delete, or 'C' to cancel: ").strip()
+        
+        if choice.lower() == 'c':
+            print("Operation cancelled.")
+            return
+
+        index_to_delete = int(choice) - 1
+        
+        # 2. Validate index
+        if 0 <= index_to_delete < len(assignments):
+            deleted_assignment = assignments.pop(index_to_delete)
+            save_assignments(assignments)
+            print(f"✅ Assignment *'{deleted_assignment['name']}'* marked as complete and removed!")
+        else:
+            print("❌ Invalid number entered. Please choose a number from the list.")
+            
+    except ValueError:
+        print("❌ Invalid input. Please enter a number or 'C'.")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")
+
+
+# --- User Interaction Function ---
+
 def display_menu():
     """Displays the main menu options."""
     print("\n===============================")
@@ -108,8 +152,24 @@ def display_menu():
     print("===============================")
     print("1. Check Reminders Now")
     print("2. Add New Assignment")
-    print("3. Exit")
+    print("3. View All Assignments (Detail)")
+    print("4. Delete/Complete Assignment")
+    print("5. Exit")
     print("===============================")
+
+def view_all_assignments(assignments):
+    """Prints a detailed list of all assignments."""
+    print("\n--- All Tracked Assignments ---")
+    if not assignments:
+        print("ℹ No assignments are currently being tracked.")
+        return
+
+    for assignment in assignments:
+        print(f"* *{assignment['name']}*")
+        print(f"  - Due: {assignment['due_date']}")
+        print(f"  - Priority: {assignment['priority']}")
+        print("-" * 20)
+
 
 # --- Main Program Loop ---
 
@@ -121,17 +181,22 @@ def main():
     
     while True:
         display_menu()
-        choice = input("Enter your choice (1/2/3): ")
+        choice = input("Enter your choice (1/2/3/4/5): ")
         
         if choice == '1':
             check_reminders(assignments)
         elif choice == '2':
             add_assignment(assignments)
         elif choice == '3':
+            view_all_assignments(assignments)
+        elif choice == '4':
+            # Handle the new deletion function
+            delete_assignment(assignments)
+        elif choice == '5':
             print("👋 Exiting the system. Goodbye!")
             break
         else:
-            print("❗ Invalid choice. Please select 1, 2, or 3.")
+            print("❗ Invalid choice. Please select 1, 2, 3, 4, or 5.")
         
         # Pause for a short time to make the output readable before the next loop
         time.sleep(1) 
